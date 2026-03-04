@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:17-alpine
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - otoflash_db:/var/lib/postgresql/data
+volumes:
+  otoflash_db:
