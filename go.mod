@@ -1,4 +1,4 @@
-module otoflash
+module aureus
 
 go 1.25.0
 

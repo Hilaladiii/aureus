@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"otoflash/pkg/config"
+	"aureus/pkg/config"
 )
 
 func main() {
