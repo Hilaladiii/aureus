@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS wallets;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS auction_items;
+DROP TABLE IF EXISTS bid_histories;

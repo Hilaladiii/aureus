@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	config "otoflash/pkg/config"
+	config "aureus/pkg/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

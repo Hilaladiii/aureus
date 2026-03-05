@@ -8,6 +8,6 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - otoflash_db:/var/lib/postgresql/data
+      - aureus_db:/var/lib/postgresql/data
 volumes:
-  otoflash_db:
+  aureus_db:
