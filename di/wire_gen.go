@@ -14,9 +14,7 @@ import (
 	"github.com/Hilaladiii/aureus/internal/repository"
 	"github.com/Hilaladiii/aureus/internal/usecase"
 	"github.com/Hilaladiii/aureus/pkg/config"
-	"github.com/Hilaladiii/aureus/pkg/driver/db"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -27,23 +25,17 @@ func InitializeApp() (*fiber.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	gormDB := db.NewDB(env)
-	userRepo := repository.NewUserRepo(gormDB)
+	db := config.NewDB(env)
+	userRepo := repository.NewUserRepo(db)
 	jwtItf, err := jwt.NewJwt(env)
 	if err != nil {
 		return nil, err
 	}
 	userUsecase := usecase.NewUserUsecase(userRepo, jwtItf)
-	validate := ProvideValidator()
+	validate := config.NewValidator()
 	userHandler := handler.NewUserHandler(userUsecase, validate)
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
 	routerRouter := router.NewRouter(userHandler, middlewareMiddleware)
 	app := server.NewFiberServer(routerRouter)
 	return app, nil
-}
-
-// injector.go:
-
-func ProvideValidator() *validator.Validate {
-	return validator.New()
 }

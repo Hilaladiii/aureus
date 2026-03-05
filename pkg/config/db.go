@@ -1,15 +1,13 @@
-package db
+package config
 
 import (
 	"fmt"
-
-	config "github.com/Hilaladiii/aureus/pkg/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func NewDB(cfg config.Env) *gorm.DB {
+func NewDB(cfg Env) *gorm.DB {
 	psqlInfo := fmt.Sprintf(
 		"host=%s user=%s dbname=%s port=%s password=%s",
 		cfg.DBHost, cfg.DBUser, cfg.DBName, cfg.DBPort, cfg.DBPassword)
