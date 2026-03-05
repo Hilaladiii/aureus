@@ -5,20 +5,23 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
+type Env struct {
+	AppName    string `mapstructure:"APP_NAME"`
 	DBHost     string `mapstructure:"DB_HOST"`
 	DBName     string `mapstructure:"DB_NAME"`
 	DBUser     string `mapstructure:"DB_USER"`
 	DBPort     string `mapstructure:"DB_PORT"`
 	DBPassword string `mapstructure:"DB_PASSWORD"`
+	JwtSecret  string `mapstructure:"JWT_SECRET"`
+	JwtExpire  string `mapstructure:"JWT_EXPIRE"`
 }
 
 var envs = []string{
-	"DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD",
+	"APP_NAME", "DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD", "JWT_SECRET", "JWT_EXPIRE",
 }
 
-func LoadConfig() (Config, error) {
-	var config Config
+func LoadEnv() (Env, error) {
+	var config Env
 
 	viper.AddConfigPath("./")
 	viper.SetConfigFile(".env")

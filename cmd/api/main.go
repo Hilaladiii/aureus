@@ -3,13 +3,17 @@ package main
 import (
 	"log"
 
-	"aureus/pkg/config"
+	di "github.com/Hilaladiii/aureus/di"
 )
 
 func main() {
-	// will be implemented soon
-	_, err := config.LoadConfig()
+	app, err := di.InitializeApp()
 	if err != nil {
-		log.Fatal("cannot load config", err)
+		log.Fatalf("failed initialized server: %v", err)
+	}
+
+	err = app.Listen(":8000")
+	if err != nil {
+		log.Fatalf("Server crash: %v", err)
 	}
 }

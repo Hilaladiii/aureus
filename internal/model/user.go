@@ -20,3 +20,29 @@ type User struct {
 	Wallet     Wallet       `gorm:"foreignKey:UserID;references:ID"`
 	BidHistory []BidHistory `gorm:"foreignKey:UserID;references:ID"`
 }
+
+type UserRegisterRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+}
+
+type UserLoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+}
+
+type UserUpdateRequest struct {
+	Username string `json:"username,omitempty" validate:"omitempty"`
+	Email    string `json:"email,omitempty" validate:"omitempty,email"`
+	Password string `json:"password,omitempty" validate:"omitempty,min=8"`
+}
+
+type UserResponse struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Role      Role      `json:"role"`
+}

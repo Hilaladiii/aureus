@@ -3,13 +3,13 @@ package db
 import (
 	"fmt"
 
-	config "aureus/pkg/config"
+	config "github.com/Hilaladiii/aureus/pkg/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
+func NewDB(cfg config.Env) *gorm.DB {
 	psqlInfo := fmt.Sprintf(
 		"host=%s user=%s dbname=%s port=%s password=%s",
 		cfg.DBHost, cfg.DBUser, cfg.DBName, cfg.DBPort, cfg.DBPassword)
@@ -17,6 +17,9 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{
 		SkipDefaultTransaction: true,
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	return db, err
+	return db
 }
