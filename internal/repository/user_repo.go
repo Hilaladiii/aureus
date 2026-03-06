@@ -39,16 +39,7 @@ func (ur *UserRepo) CheckUserExist(ctx context.Context, email string) (bool, err
 
 // CreateUser implements [UserRepoItf].
 func (ur *UserRepo) CreateUser(ctx context.Context, user *model.User) error {
-	exist, err := ur.CheckUserExist(ctx, user.Email)
-	if err != nil {
-		return err
-	}
-
-	if exist {
-		return errors.New("email already exists")
-	}
-
-	err = ur.db.WithContext(ctx).Create(user).Error
+	err := ur.db.WithContext(ctx).Create(user).Error
 	if err != nil {
 		return err
 	}
@@ -83,12 +74,7 @@ func (ur *UserRepo) GetUserByEmail(ctx context.Context, email string) (*model.Us
 
 // UpdateUser implements [UserRepoItf].
 func (ur *UserRepo) UpdateUser(ctx context.Context, user *model.User) error {
-	user, err := ur.GetUserById(ctx, user.ID)
-	if err != nil {
-		return err
-	}
-
-	err = ur.db.Save(user).Error
+	err := ur.db.Save(user).Error
 	if err != nil {
 		return err
 	}

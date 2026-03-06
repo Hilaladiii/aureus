@@ -34,8 +34,11 @@ func InitializeApp() (*fiber.App, error) {
 	userUsecase := usecase.NewUserUsecase(userRepo, jwtItf)
 	validate := config.NewValidator()
 	userHandler := handler.NewUserHandler(userUsecase, validate)
+	categoryRepo := repository.NewCategoryRepo(db)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	categoryHandler := handler.NewCategoryHandler(categoryUsecase, validate)
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
-	routerRouter := router.NewRouter(userHandler, middlewareMiddleware)
+	routerRouter := router.NewRouter(userHandler, categoryHandler, middlewareMiddleware)
 	app := server.NewFiberServer(routerRouter)
 	return app, nil
 }

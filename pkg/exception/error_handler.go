@@ -1,9 +1,7 @@
 package exception
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/Hilaladiii/aureus/pkg/response"
 
@@ -11,34 +9,26 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func ErrorHandler(ctx fiber.Ctx, err error) error {
-	code := fiber.StatusInternalServerError
-	status := http.StatusText(code)
-	var errMessages any = err.Error()
-
-	var fiberErr *fiber.Error
-	if errors.As(err, &fiberErr) {
-		code = fiberErr.Code
-		status = http.StatusText(code)
-		errMessages = fiberErr.Message
+func ErrorHandler(c fiber.Ctx, err error) error {
+	if e, ok := err.(*AppError); ok {
+		return c.Status(e.Code).JSON(response.ErrorResponse(e.Code, e.Message))
 	}
 
-	var valErrs validator.ValidationErrors
-	if errors.As(err, &valErrs) {
-		code = fiber.StatusBadRequest
-		status = "BAD_REQUEST"
+	if e, ok := err.(*fiber.Error); ok {
+		return c.Status(e.Code).JSON(response.ErrorResponse(e.Code, e.Message))
+	}
 
-		var errList []string
-		for _, e := range valErrs {
-			errMessage := fmt.Sprintf("Field '%s' is invalid (Reason: %s %s)", e.Field(), e.Tag(), e.Param())
-			errList = append(errList, errMessage)
+	if e, ok := err.(validator.ValidationErrors); ok {
+		var errMessages []string
+		for _, fieldErr := range e {
+			msg := fmt.Sprintf("Column '%s' failed validation rule: '%s'", fieldErr.Field(), fieldErr.Tag())
+			errMessages = append(errMessages, msg)
 		}
-		errMessages = errList
+		if len(errMessages) > 1 {
+			return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(fiber.StatusBadRequest, errMessages))
+		}
+		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(fiber.StatusBadRequest, errMessages[0]))
 	}
 
-	return ctx.Status(code).JSON(response.WebResponse{
-		Code:   code,
-		Status: status,
-		Errors: errMessages,
-	})
+	return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(fiber.StatusInternalServerError, "an error occurred in the system"))
 }

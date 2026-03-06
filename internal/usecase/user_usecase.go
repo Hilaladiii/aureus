@@ -6,6 +6,7 @@ import (
 
 	"github.com/Hilaladiii/aureus/internal/model"
 	"github.com/Hilaladiii/aureus/internal/repository"
+	"github.com/Hilaladiii/aureus/pkg/exception"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
 	"github.com/Hilaladiii/aureus/pkg/util"
 
@@ -13,10 +14,10 @@ import (
 )
 
 type UserUsecaseItf interface {
-	Register(ctx context.Context, req *model.UserRegisterRequest) (*model.UserResponse, error)
+	Register(ctx context.Context, req *model.UserRegisterRequest) (model.UserResource, error)
 	Login(ctx context.Context, req *model.UserLoginRequest) (string, error)
-	GetUserById(ctx context.Context, id string) (*model.UserResponse, error)
-	UpdateUser(ctx context.Context, req *model.UserUpdateRequest, userId string) (*model.UserResponse, error)
+	GetUserById(ctx context.Context, id string) (model.UserResource, error)
+	UpdateUser(ctx context.Context, req *model.UserUpdateRequest, userId string) (model.UserResource, error)
 }
 
 type UserUsecase struct {
@@ -31,25 +32,14 @@ func NewUserUsecase(ur repository.UserRepoItf, jwt jwt.JwtItf) *UserUsecase {
 	}
 }
 
-func ToUserResponse(user *model.User) *model.UserResponse {
-	return &model.UserResponse{
-		ID:        user.ID,
-		Email:     user.Email,
-		Username:  user.Username,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Role:      user.Role,
-	}
-}
-
 // GetUserById implements [UserUsecaseItf].
-func (u *UserUsecase) GetUserById(ctx context.Context, id string) (*model.UserResponse, error) {
+func (u *UserUsecase) GetUserById(ctx context.Context, id string) (model.UserResource, error) {
 	user, err := u.userRepo.GetUserById(ctx, id)
 	if err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
-	return ToUserResponse(user), nil
+	return user.Resource(), nil
 }
 
 // Login implements [UserUsecaseItf].
@@ -72,14 +62,23 @@ func (u *UserUsecase) Login(ctx context.Context, req *model.UserLoginRequest) (s
 }
 
 // Register implements [UserUsecaseItf].
-func (u *UserUsecase) Register(ctx context.Context, req *model.UserRegisterRequest) (*model.UserResponse, error) {
+func (u *UserUsecase) Register(ctx context.Context, req *model.UserRegisterRequest) (model.UserResource, error) {
+	exist, err := u.userRepo.CheckUserExist(ctx, req.Email)
+	if err != nil {
+		return model.UserResource{}, err
+	}
+
+	if exist {
+		return model.UserResource{}, exception.NewBadRequestError("email already exists")
+	}
+
 	if err := util.ValidateStrongPassword(req.Password); err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
 	newUser := &model.User{
@@ -90,17 +89,17 @@ func (u *UserUsecase) Register(ctx context.Context, req *model.UserRegisterReque
 
 	err = u.userRepo.CreateUser(ctx, newUser)
 	if err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
-	return ToUserResponse(newUser), nil
+	return newUser.Resource(), nil
 }
 
 // UpdateUser implements [UserUsecaseItf].
-func (u *UserUsecase) UpdateUser(ctx context.Context, req *model.UserUpdateRequest, userId string) (*model.UserResponse, error) {
+func (u *UserUsecase) UpdateUser(ctx context.Context, req *model.UserUpdateRequest, userId string) (model.UserResource, error) {
 	user, err := u.userRepo.GetUserById(ctx, userId)
 	if err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
 	if req.Email != "" {
@@ -114,15 +113,15 @@ func (u *UserUsecase) UpdateUser(ctx context.Context, req *model.UserUpdateReque
 	if req.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			return nil, err
+			return model.UserResource{}, err
 		}
 
 		user.Password = string(hashedPassword)
 	}
 
 	if err = u.userRepo.UpdateUser(ctx, user); err != nil {
-		return nil, err
+		return model.UserResource{}, err
 	}
 
-	return ToUserResponse(user), nil
+	return user.Resource(), nil
 }

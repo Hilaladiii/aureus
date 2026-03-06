@@ -35,11 +35,7 @@ func (h *UserHandler) Register(c fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.WebResponse{
-		Code:   fiber.StatusCreated,
-		Status: "CREATED",
-		Data:   user,
-	})
+	return c.Status(fiber.StatusCreated).JSON(response.SuccessResponse(fiber.StatusCreated, user))
 }
 
 func (h *UserHandler) Login(c fiber.Ctx) error {
@@ -61,11 +57,7 @@ func (h *UserHandler) Login(c fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.WebResponse{
-		Code:   fiber.StatusOK,
-		Status: "OK",
-		Data:   token,
-	})
+	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, token))
 }
 
 func (h *UserHandler) GetProfile(c fiber.Ctx) error {
@@ -79,11 +71,7 @@ func (h *UserHandler) GetProfile(c fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.WebResponse{
-		Code:   fiber.StatusOK,
-		Status: "OK",
-		Data:   user,
-	})
+	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, user))
 }
 
 func (h *UserHandler) UpdateUser(c fiber.Ctx) error {
@@ -102,9 +90,5 @@ func (h *UserHandler) UpdateUser(c fiber.Ctx) error {
 
 	user, err := h.userUC.UpdateUser(c.Context(), &payloadUser, userID)
 
-	return c.Status(fiber.StatusOK).JSON(response.WebResponse{
-		Code:   fiber.StatusOK,
-		Status: "OK",
-		Data:   user,
-	})
+	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, user))
 }

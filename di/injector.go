@@ -20,6 +20,7 @@ func InitializeApp() (*fiber.App, error) {
 		jwt.NewJwt,
 		config.NewValidator,
 		UserSet,
+		CategorySet,
 		middleware.NewMiddleware,
 		router.NewRouter,
 		server.NewFiberServer,

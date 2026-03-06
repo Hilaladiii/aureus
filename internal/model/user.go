@@ -38,11 +38,37 @@ type UserUpdateRequest struct {
 	Password string `json:"password,omitempty" validate:"omitempty,min=8"`
 }
 
-type UserResponse struct {
+type UserResource struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Role      Role      `json:"role"`
+}
+
+func (u *User) Resource() UserResource {
+	if u == nil {
+		return UserResource{}
+	}
+	return UserResource{
+		ID:        u.ID,
+		Email:     u.Email,
+		Username:  u.Username,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Role:      u.Role,
+	}
+}
+
+func UserResources(users []User) []UserResource {
+	if len(users) == 0 {
+		return []UserResource{}
+	}
+
+	responses := make([]UserResource, 0, len(users))
+	for i := range users {
+		responses = append(responses, users[i].Resource())
+	}
+	return responses
 }
