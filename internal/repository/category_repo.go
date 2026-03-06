@@ -61,7 +61,7 @@ func (r *CategoryRepo) GetByName(ctx context.Context, categoryName string) (*mod
 }
 
 func (r *CategoryRepo) UpdateCategory(ctx context.Context, category *model.Category, categoryID string) error {
-	if err := r.db.Save(category).Error; err != nil {
+	if err := r.db.WithContext(ctx).Save(category).Error; err != nil {
 		return err
 	}
 
@@ -69,7 +69,7 @@ func (r *CategoryRepo) UpdateCategory(ctx context.Context, category *model.Categ
 }
 
 func (r *CategoryRepo) DeleteCategory(ctx context.Context, categoryID string) error {
-	if err := r.db.Delete(&model.Category{}, "id = ?", categoryID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Delete(&model.Category{}, "id = ?", categoryID).Error; err != nil {
 		return err
 	}
 

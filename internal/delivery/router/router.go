@@ -10,13 +10,20 @@ import (
 type Router struct {
 	UserHandler     *handler.UserHandler
 	CategoryHandler *handler.CategoryHandler
+	WalletHandler   *handler.WalletHandler
 	Middleware      middleware.MiddlewareItf
 }
 
-func NewRouter(userHandler *handler.UserHandler, categoryHandler *handler.CategoryHandler, middleware *middleware.Middleware) *Router {
+func NewRouter(
+	userHandler *handler.UserHandler,
+	categoryHandler *handler.CategoryHandler,
+	wallethandler *handler.WalletHandler,
+	middleware *middleware.Middleware,
+) *Router {
 	return &Router{
 		UserHandler:     userHandler,
 		CategoryHandler: categoryHandler,
+		WalletHandler:   wallethandler,
 		Middleware:      middleware,
 	}
 }
@@ -39,4 +46,12 @@ func (r *Router) Setup(app *fiber.App) {
 	category.Delete("/:categoryId", r.CategoryHandler.DeleteCategory)
 	category.Get("", r.CategoryHandler.GetAll)
 	category.Get("/:categoryId", r.CategoryHandler.GetByID)
+
+	wallet := api.Group("/wallets")
+	wallet.Use(r.Middleware.JwtMiddleware())
+	wallet.Post("/top-up", r.WalletHandler.CreateTopUpSession)
+	wallet.Post("", r.WalletHandler.Create)
+	wallet.Post("/:walletId", r.WalletHandler.GetCurrentBalance)
+
+	app.Post("/webhooks/stripe", r.WalletHandler.StripeWeebHook)
 }

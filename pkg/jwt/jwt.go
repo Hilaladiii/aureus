@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Hilaladiii/aureus/pkg/config"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -24,14 +23,14 @@ type UserClaims struct {
 	UserID string
 }
 
-func NewJwt(cfg config.Env) (JwtItf, error) {
-	exp, err := time.ParseDuration(cfg.JwtExpire)
+func NewJwt(env config.Env) (JwtItf, error) {
+	exp, err := time.ParseDuration(env.JwtExpire)
 	if err != nil {
 		return nil, fmt.Errorf("invalid duration format for expiration time: %v", err)
 	}
 
 	return &Jwt{
-		SecretKey:  cfg.JwtSecret,
+		SecretKey:  env.JwtSecret,
 		ExpireTime: exp,
 	}, nil
 }
@@ -61,7 +60,7 @@ func (j *Jwt) CreateToken(userID string) (string, error) {
 func (j *Jwt) VerifyToken(tokenString string) (string, error) {
 	var claims UserClaims
 
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (any, error) {
 		return []byte(j.SecretKey), nil
 	})
 	if err != nil {

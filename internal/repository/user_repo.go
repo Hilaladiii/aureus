@@ -74,7 +74,7 @@ func (ur *UserRepo) GetUserByEmail(ctx context.Context, email string) (*model.Us
 
 // UpdateUser implements [UserRepoItf].
 func (ur *UserRepo) UpdateUser(ctx context.Context, user *model.User) error {
-	err := ur.db.Save(user).Error
+	err := ur.db.WithContext(ctx).Save(user).Error
 	if err != nil {
 		return err
 	}

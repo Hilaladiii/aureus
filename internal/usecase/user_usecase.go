@@ -25,9 +25,9 @@ type UserUsecase struct {
 	jwt      jwt.JwtItf
 }
 
-func NewUserUsecase(ur repository.UserRepoItf, jwt jwt.JwtItf) *UserUsecase {
+func NewUserUsecase(userRepo repository.UserRepoItf, jwt jwt.JwtItf) *UserUsecase {
 	return &UserUsecase{
-		userRepo: ur,
+		userRepo: userRepo,
 		jwt:      jwt,
 	}
 }

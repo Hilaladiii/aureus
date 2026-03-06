@@ -37,8 +37,11 @@ func InitializeApp() (*fiber.App, error) {
 	categoryRepo := repository.NewCategoryRepo(db)
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
 	categoryHandler := handler.NewCategoryHandler(categoryUsecase, validate)
+	walletRepo := repository.NewWalletRepo(db)
+	walletUsecase := usecase.NewWalletUsecase(walletRepo, env)
+	walletHandler := handler.NewWalletHandler(walletUsecase, validate, env)
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
-	routerRouter := router.NewRouter(userHandler, categoryHandler, middlewareMiddleware)
+	routerRouter := router.NewRouter(userHandler, categoryHandler, walletHandler, middlewareMiddleware)
 	app := server.NewFiberServer(routerRouter)
 	return app, nil
 }

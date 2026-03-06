@@ -6,18 +6,24 @@ import (
 )
 
 type Env struct {
-	AppName    string `mapstructure:"APP_NAME"`
-	DBHost     string `mapstructure:"DB_HOST"`
-	DBName     string `mapstructure:"DB_NAME"`
-	DBUser     string `mapstructure:"DB_USER"`
-	DBPort     string `mapstructure:"DB_PORT"`
-	DBPassword string `mapstructure:"DB_PASSWORD"`
-	JwtSecret  string `mapstructure:"JWT_SECRET"`
-	JwtExpire  string `mapstructure:"JWT_EXPIRE"`
+	AppName          string `mapstructure:"APP_NAME"`
+	DBHost           string `mapstructure:"DB_HOST"`
+	DBName           string `mapstructure:"DB_NAME"`
+	DBUser           string `mapstructure:"DB_USER"`
+	DBPort           string `mapstructure:"DB_PORT"`
+	DBPassword       string `mapstructure:"DB_PASSWORD"`
+	JwtSecret        string `mapstructure:"JWT_SECRET"`
+	JwtExpire        string `mapstructure:"JWT_EXPIRE"`
+	StripeSecretKey  string `mapstructure:"STRIPE_SECRET_KEY"`
+	StripeWebHookKey string `mapstructure:"STRIPE_WEBHOOK_KEY"`
+	StripeSuccessUrl string `mapstructure:"STRIPE_SUCCESS_URL"`
+	StripeCancelUrl  string `mapstructure:"STRIPE_CANCEL_URL"`
 }
 
 var envs = []string{
-	"APP_NAME", "DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD", "JWT_SECRET", "JWT_EXPIRE",
+	"APP_NAME", "DB_HOST", "DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD",
+	"JWT_SECRET", "JWT_EXPIRE",
+	"STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_KEY",
 }
 
 func LoadEnv() (Env, error) {

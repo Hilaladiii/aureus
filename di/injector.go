@@ -5,8 +5,6 @@ package di
 
 import (
 	"github.com/Hilaladiii/aureus/internal/delivery/middleware"
-	"github.com/Hilaladiii/aureus/internal/delivery/router"
-	"github.com/Hilaladiii/aureus/internal/delivery/server"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
 	"github.com/gofiber/fiber/v3"
@@ -21,9 +19,10 @@ func InitializeApp() (*fiber.App, error) {
 		config.NewValidator,
 		UserSet,
 		CategorySet,
+		WalletSet,
 		middleware.NewMiddleware,
-		router.NewRouter,
-		server.NewFiberServer,
+		config.NewRouter,
+		config.NewFiberServer,
 	)
 
 	return nil, nil
