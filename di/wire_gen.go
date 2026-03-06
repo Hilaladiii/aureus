@@ -9,9 +9,8 @@ package di
 import (
 	"github.com/Hilaladiii/aureus/internal/delivery/handler"
 	"github.com/Hilaladiii/aureus/internal/delivery/middleware"
-	"github.com/Hilaladiii/aureus/internal/delivery/router"
-	"github.com/Hilaladiii/aureus/internal/delivery/server"
 	"github.com/Hilaladiii/aureus/internal/repository"
+	"github.com/Hilaladiii/aureus/internal/server"
 	"github.com/Hilaladiii/aureus/internal/usecase"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
@@ -41,7 +40,7 @@ func InitializeApp() (*fiber.App, error) {
 	walletUsecase := usecase.NewWalletUsecase(walletRepo, env)
 	walletHandler := handler.NewWalletHandler(walletUsecase, validate, env)
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
-	routerRouter := router.NewRouter(userHandler, categoryHandler, walletHandler, middlewareMiddleware)
-	app := server.NewFiberServer(routerRouter)
+	router := server.NewRouter(userHandler, categoryHandler, walletHandler, middlewareMiddleware)
+	app := server.NewFiberServer(router)
 	return app, nil
 }

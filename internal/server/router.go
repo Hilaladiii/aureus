@@ -1,4 +1,4 @@
-package router
+package server
 
 import (
 	"github.com/Hilaladiii/aureus/internal/delivery/handler"

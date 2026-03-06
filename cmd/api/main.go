@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	di "github.com/Hilaladiii/aureus/di"
+	"github.com/Hilaladiii/aureus/di"
 )
 
 func main() {
