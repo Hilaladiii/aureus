@@ -8,14 +8,15 @@ import (
 	"github.com/Hilaladiii/aureus/internal/repository"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/exception"
+	"github.com/shopspring/decimal"
 	"github.com/stripe/stripe-go/v84"
 	"gorm.io/gorm"
 )
 
 type WalletUsecaseItf interface {
 	Create(ctx context.Context, req *model.WalletCreateRequest, userID string) (model.WalletResource, error)
-	CreateTopUpSession(ctx context.Context, amount float64, userID string) (string, error)
-	TopUpBalance(ctx context.Context, amount float64, walletID string) error
+	CreateTopUpSession(ctx context.Context, amount decimal.Decimal, userID string) (string, error)
+	TopUpBalance(ctx context.Context, amount decimal.Decimal, walletID string) error
 	GetCurrentBalance(ctx context.Context, walletID string) (model.WalletResource, error)
 	GetByID(ctx context.Context, walletID string) (model.WalletResource, error)
 }
@@ -53,7 +54,7 @@ func (u *WalletUsecase) Create(ctx context.Context, req *model.WalletCreateReque
 	return newWallet.Resource(), nil
 }
 
-func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount float64, userID string) (string, error) {
+func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount decimal.Decimal, userID string) (string, error) {
 	wallet, err := u.walletRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -63,6 +64,8 @@ func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount float64, 
 	}
 
 	sc := stripe.NewClient(u.env.StripeSecretKey)
+
+	stripeAmount := amount.Mul(decimal.NewFromInt(100)).IntPart()
 
 	params := &stripe.CheckoutSessionCreateParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
@@ -77,7 +80,7 @@ func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount float64, 
 					ProductData: &stripe.CheckoutSessionCreateLineItemPriceDataProductDataParams{
 						Name: stripe.String("Top up wallet balance"),
 					},
-					UnitAmount: stripe.Int64(int64(amount) * 100),
+					UnitAmount: stripe.Int64(stripeAmount),
 				},
 				Quantity: stripe.Int64(1),
 			},
@@ -91,7 +94,7 @@ func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount float64, 
 	return s.URL, nil
 }
 
-func (u *WalletUsecase) TopUpBalance(ctx context.Context, amount float64, walletID string) error {
+func (u *WalletUsecase) TopUpBalance(ctx context.Context, amount decimal.Decimal, walletID string) error {
 	_, err := u.walletRepo.GetByID(ctx, walletID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

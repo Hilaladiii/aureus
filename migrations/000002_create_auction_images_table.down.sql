@@ -1,0 +1,1 @@
+DROP Table IF EXISTS auction_images;

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -32,4 +33,33 @@ func NewDB(cfg Env) *gorm.DB {
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 
 	return db
+}
+
+type (
+	txKey        struct{}
+	TxManagerItf interface {
+		WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	}
+)
+
+type txManager struct {
+	db *gorm.DB
+}
+
+func NewTxManager(db *gorm.DB) TxManagerItf {
+	return &txManager{db}
+}
+
+func (t *txManager) WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return t.db.Transaction(func(tx *gorm.DB) error {
+		txCtx := context.WithValue(ctx, txKey{}, tx)
+		return fn(txCtx)
+	})
+}
+
+func ExtractTx(ctx context.Context, defaultDB *gorm.DB) *gorm.DB {
+	if tx, ok := ctx.Value(txKey{}).(*gorm.DB); ok {
+		return tx
+	}
+	return defaultDB
 }

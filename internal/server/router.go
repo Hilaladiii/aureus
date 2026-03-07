@@ -11,6 +11,7 @@ type Router struct {
 	UserHandler     *handler.UserHandler
 	CategoryHandler *handler.CategoryHandler
 	WalletHandler   *handler.WalletHandler
+	AuctionHandler  *handler.AuctionHandler
 	Middleware      middleware.MiddlewareItf
 }
 
@@ -18,18 +19,23 @@ func NewRouter(
 	userHandler *handler.UserHandler,
 	categoryHandler *handler.CategoryHandler,
 	wallethandler *handler.WalletHandler,
+	auctionHandler *handler.AuctionHandler,
 	middleware *middleware.Middleware,
 ) *Router {
 	return &Router{
 		UserHandler:     userHandler,
 		CategoryHandler: categoryHandler,
 		WalletHandler:   wallethandler,
+		AuctionHandler:  auctionHandler,
 		Middleware:      middleware,
 	}
 }
 
 func (r *Router) Setup(app *fiber.App) {
 	api := app.Group("/api/v1")
+
+	// stripe webhook
+	app.Post("/webhooks/stripe", r.WalletHandler.StripeWeebHook)
 
 	// users route
 	user := api.Group("/users")
@@ -47,11 +53,18 @@ func (r *Router) Setup(app *fiber.App) {
 	category.Get("", r.CategoryHandler.GetAll)
 	category.Get("/:categoryId", r.CategoryHandler.GetByID)
 
+	// wallets route
 	wallet := api.Group("/wallets")
 	wallet.Use(r.Middleware.JwtMiddleware())
 	wallet.Post("/top-up", r.WalletHandler.CreateTopUpSession)
 	wallet.Post("", r.WalletHandler.Create)
 	wallet.Post("/:walletId", r.WalletHandler.GetCurrentBalance)
 
-	app.Post("/webhooks/stripe", r.WalletHandler.StripeWeebHook)
+	// auction route
+	auction := api.Group("/auctions")
+	auction.Use(r.Middleware.JwtMiddleware())
+	auction.Post("", r.AuctionHandler.Create)
+	auction.Get("", r.AuctionHandler.GetAll)
+	auction.Get("/:auctionId", r.AuctionHandler.GetByID)
+	auction.Post("/:auctionId/bid", r.AuctionHandler.BidAuction)
 }

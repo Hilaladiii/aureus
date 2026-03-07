@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Hilaladiii/aureus/internal/model"
+	tx "github.com/Hilaladiii/aureus/pkg/config"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -11,11 +13,12 @@ import (
 type WalletRepoItf interface {
 	Create(ctx context.Context, wallet *model.Wallet) error
 	Update(ctx context.Context, wallet *model.Wallet, walletID string) error
-	AddBalance(ctx context.Context, amount float64, walletID string) error
+	AddBalance(ctx context.Context, amount decimal.Decimal, walletID string) error
 	GetBalance(ctx context.Context, walletID string) (*model.Wallet, error)
 	GetAll(ctx context.Context) ([]model.Wallet, error)
 	GetByID(ctx context.Context, walletID string) (*model.Wallet, error)
 	GetByUserID(ctx context.Context, userID string) (*model.Wallet, error)
+	GetByUserIDWithLock(ctx context.Context, userID string) (*model.Wallet, error)
 }
 
 type WalletRepo struct {
@@ -27,7 +30,8 @@ func NewWalletRepo(db *gorm.DB) *WalletRepo {
 }
 
 func (r *WalletRepo) Create(ctx context.Context, wallet *model.Wallet) error {
-	err := r.db.WithContext(ctx).Create(&wallet).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).Create(&wallet).Error
 	if err != nil {
 		return err
 	}
@@ -36,14 +40,15 @@ func (r *WalletRepo) Create(ctx context.Context, wallet *model.Wallet) error {
 }
 
 func (r *WalletRepo) Update(ctx context.Context, wallet *model.Wallet, walletID string) error {
-	err := r.db.WithContext(ctx).Save(wallet).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).Save(wallet).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *WalletRepo) AddBalance(ctx context.Context, amount float64, walletID string) error {
+func (r *WalletRepo) AddBalance(ctx context.Context, amount decimal.Decimal, walletID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var wallet model.Wallet
 
@@ -53,7 +58,7 @@ func (r *WalletRepo) AddBalance(ctx context.Context, amount float64, walletID st
 			return err
 		}
 
-		wallet.ActiveBalance += amount
+		wallet.ActiveBalance.Add(amount)
 
 		if err := tx.Save(&wallet).Error; err != nil {
 			return err
@@ -65,7 +70,8 @@ func (r *WalletRepo) AddBalance(ctx context.Context, amount float64, walletID st
 
 func (r *WalletRepo) GetBalance(ctx context.Context, walletID string) (*model.Wallet, error) {
 	var wallet model.Wallet
-	err := r.db.WithContext(ctx).Select("active_balance", "held_balance").First(&wallet, "id = ?", walletID).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).Select("active_balance", "held_balance").First(&wallet, "id = ?", walletID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +81,8 @@ func (r *WalletRepo) GetBalance(ctx context.Context, walletID string) (*model.Wa
 
 func (r *WalletRepo) GetAll(ctx context.Context) ([]model.Wallet, error) {
 	var wallets []model.Wallet
-	err := r.db.WithContext(ctx).Find(&wallets).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).Find(&wallets).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +92,8 @@ func (r *WalletRepo) GetAll(ctx context.Context) ([]model.Wallet, error) {
 
 func (r *WalletRepo) GetByID(ctx context.Context, walletID string) (*model.Wallet, error) {
 	var wallet model.Wallet
-	err := r.db.WithContext(ctx).First(&wallet, "id = ?", walletID).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).First(&wallet, "id = ?", walletID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +102,18 @@ func (r *WalletRepo) GetByID(ctx context.Context, walletID string) (*model.Walle
 
 func (r *WalletRepo) GetByUserID(ctx context.Context, userID string) (*model.Wallet, error) {
 	var wallet model.Wallet
-	err := r.db.WithContext(ctx).First(&wallet, "user_id = ?", userID).Error
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).First(&wallet, "user_id = ?", userID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &wallet, nil
+}
+
+func (r *WalletRepo) GetByUserIDWithLock(ctx context.Context, userID string) (*model.Wallet, error) {
+	var wallet model.Wallet
+	db := tx.ExtractTx(ctx, r.db)
+	err := db.WithContext(ctx).Clauses(clause.Locking{Strength: "UPDATE"}).First(&wallet, "user_id = ?", userID).Error
 	if err != nil {
 		return nil, err
 	}

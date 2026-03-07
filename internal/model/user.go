@@ -22,28 +22,28 @@ type User struct {
 }
 
 type UserRegisterRequest struct {
-	Username string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Username string `form:"username" validate:"required"`
+	Email    string `form:"email" validate:"required,email"`
+	Password string `form:"password" validate:"required,min=8"`
 }
 
 type UserLoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Email    string `form:"email" validate:"required,email"`
+	Password string `form:"password" validate:"required,min=8"`
 }
 
 type UserUpdateRequest struct {
-	Username string `json:"username,omitempty" validate:"omitempty"`
-	Email    string `json:"email,omitempty" validate:"omitempty,email"`
-	Password string `json:"password,omitempty" validate:"omitempty,min=8"`
+	Username string `form:"username,omitempty" validate:"omitempty"`
+	Email    string `form:"email,omitempty" validate:"omitempty,email"`
+	Password string `form:"password,omitempty" validate:"omitempty,min=8"`
 }
 
 type UserResource struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	Role      Role      `json:"role"`
 }
 

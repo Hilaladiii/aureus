@@ -39,8 +39,14 @@ func InitializeApp() (*fiber.App, error) {
 	walletRepo := repository.NewWalletRepo(db)
 	walletUsecase := usecase.NewWalletUsecase(walletRepo, env)
 	walletHandler := handler.NewWalletHandler(walletUsecase, validate, env)
+	auctionRepo := repository.NewAuctionRepo(db)
+	bidRepo := repository.NewBidRepo(db)
+	seaweedFSStorage := config.NewSeaweedFSStorage(env)
+	txManagerItf := config.NewTxManager(db)
+	auctionUsecase := usecase.NewAuctionUsecase(auctionRepo, walletRepo, bidRepo, seaweedFSStorage, txManagerItf)
+	auctionHandler := handler.NewAuctionHandler(auctionUsecase, validate)
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
-	router := server.NewRouter(userHandler, categoryHandler, walletHandler, middlewareMiddleware)
+	router := server.NewRouter(userHandler, categoryHandler, walletHandler, auctionHandler, middlewareMiddleware)
 	app := server.NewFiberServer(router)
 	return app, nil
 }

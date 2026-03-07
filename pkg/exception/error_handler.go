@@ -2,6 +2,7 @@ package exception
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/Hilaladiii/aureus/pkg/response"
 
@@ -30,5 +31,6 @@ func ErrorHandler(c fiber.Ctx, err error) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(fiber.StatusBadRequest, errMessages[0]))
 	}
 
+	log.Printf("ERROR 500 %s %s - %v\n", c.Method(), c.Path(), err)
 	return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(fiber.StatusInternalServerError, "an error occurred in the system"))
 }

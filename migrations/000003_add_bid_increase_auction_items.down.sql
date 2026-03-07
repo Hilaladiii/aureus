@@ -1,0 +1,1 @@
+ALTER TABLE auction_items DROP COLUMN bid_increment;
