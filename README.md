@@ -73,6 +73,7 @@ docker compose up -d
 ```
 
 **6. Run The Application**
+
 If you have Air installed for live-reloading:
 
 ```bash
