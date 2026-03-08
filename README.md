@@ -46,17 +46,17 @@ Through this project, I learned how to:
 git clone https://github.com/Hilaladiii/aureus.git
 ```
 
-** 2. Setup Environment Variables **
+**2. Setup Environment Variables**
 
 Create a .env file in the root directory and add your configurations (Database, Redis, JWT Secret, etc.).
 
-** 3. Generate Dependency Injection (Wire) **
+**3. Generate Dependency Injection (Wire)**
 
 ```bash
 wire gen ./di
 ```
 
-** 4. Run the Application **
+**4. Run the Application**
 
 ```bash
 air
