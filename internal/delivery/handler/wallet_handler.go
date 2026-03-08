@@ -4,15 +4,10 @@ import (
 	"github.com/Hilaladiii/aureus/internal/model"
 	"github.com/Hilaladiii/aureus/internal/usecase"
 	"github.com/Hilaladiii/aureus/pkg/config"
-	"github.com/Hilaladiii/aureus/pkg/exception"
 	"github.com/Hilaladiii/aureus/pkg/response"
 	"github.com/Hilaladiii/aureus/pkg/util"
-	"github.com/bytedance/sonic"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
-	"github.com/shopspring/decimal"
-	"github.com/stripe/stripe-go/v84"
-	"github.com/stripe/stripe-go/v84/webhook"
 )
 
 type WalletHandler struct {
@@ -77,27 +72,9 @@ func (h *WalletHandler) StripeWeebHook(c fiber.Ctx) error {
 	payload := c.Body()
 	signature := c.Get("Stripe-Signature")
 
-	event, err := webhook.ConstructEvent(payload, signature, h.env.StripeWebHookKey)
+	err := h.walletUc.StripeWebHook(c.Context(), payload, signature)
 	if err != nil {
-		return exception.NewBadRequestError("invalid signature")
-	}
-
-	if event.Type == "checkout.session.completed" {
-		var session stripe.CheckoutSession
-		err := sonic.Unmarshal(event.Data.Raw, &session)
-		if err != nil {
-			return exception.NewBadRequestError("failed parsing json")
-		}
-
-		walletID := session.ClientReferenceID
-		amount := decimal.NewFromInt(session.AmountTotal).Div(decimal.NewFromInt(100))
-
-		if session.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid {
-			err := h.walletUc.TopUpBalance(c.Context(), amount, walletID)
-			if err != nil {
-				return err
-			}
-		}
+		return err
 	}
 	return c.SendStatus(fiber.StatusOK)
 }

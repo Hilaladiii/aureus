@@ -8,8 +8,10 @@ import (
 	"github.com/Hilaladiii/aureus/internal/repository"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/exception"
+	"github.com/bytedance/sonic"
 	"github.com/shopspring/decimal"
 	"github.com/stripe/stripe-go/v84"
+	"github.com/stripe/stripe-go/v84/webhook"
 	"gorm.io/gorm"
 )
 
@@ -19,6 +21,7 @@ type WalletUsecaseItf interface {
 	TopUpBalance(ctx context.Context, amount decimal.Decimal, walletID string) error
 	GetCurrentBalance(ctx context.Context, walletID string) (model.WalletResource, error)
 	GetByID(ctx context.Context, walletID string) (model.WalletResource, error)
+	StripeWebHook(ctx context.Context, payload []byte, signature string) error
 }
 
 type WalletUsecase struct {
@@ -130,4 +133,31 @@ func (u *WalletUsecase) GetByID(ctx context.Context, walletID string) (model.Wal
 	}
 
 	return wallet.Resource(), nil
+}
+
+func (u *WalletUsecase) StripeWebHook(ctx context.Context, payload []byte, signature string) error {
+	event, err := webhook.ConstructEvent(payload, signature, u.env.StripeWebHookKey)
+	if err != nil {
+		return exception.NewBadRequestError("invalid signature")
+	}
+
+	if event.Type == "checkout.session.completed" {
+		var session stripe.CheckoutSession
+		err := sonic.Unmarshal(event.Data.Raw, &session)
+		if err != nil {
+			return exception.NewBadRequestError("failed parsing json")
+		}
+
+		walletID := session.ClientReferenceID
+		amount := decimal.NewFromInt(session.AmountTotal).Div(decimal.NewFromInt(100))
+
+		if session.PaymentStatus == stripe.CheckoutSessionPaymentStatusPaid {
+			err := u.TopUpBalance(ctx, amount, walletID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

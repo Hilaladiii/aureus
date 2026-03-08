@@ -46,20 +46,43 @@ Through this project, I learned how to:
 git clone https://github.com/Hilaladiii/aureus.git
 ```
 
-**2. Setup Environment Variables**
+**2. Install The Dependency**
+
+```bash
+go mod tidy
+```
+
+**3. Setup Environment Variables**
 
 Create a .env file in the root directory and add your configurations (Database, Redis, JWT Secret, etc.).
 
-**3. Generate Dependency Injection (Wire)**
+```bash
+cp .env.example .env
+```
+
+**4. Generate Dependency Injection (Wire)**
 
 ```bash
 wire gen ./di
 ```
 
-**4. Run the Application**
+**5. Run Docker (DB,S3,Redis)**
+
+```bash
+docker compose up -d
+```
+
+**6. Run The Application**
+If you have Air installed for live-reloading:
 
 ```bash
 air
+```
+
+Otherwise, use the standard Go command:
+
+```bash
+go run ./cmd/api main.go
 ```
 
 Built with ❤️ for learning and exploring Backend Engineering.
