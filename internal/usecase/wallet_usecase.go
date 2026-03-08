@@ -26,11 +26,12 @@ type WalletUsecaseItf interface {
 
 type WalletUsecase struct {
 	walletRepo repository.WalletRepoItf
+	txManager  config.TxManagerItf
 	env        config.Env
 }
 
-func NewWalletUsecase(walletRepo repository.WalletRepoItf, env config.Env) *WalletUsecase {
-	return &WalletUsecase{walletRepo, env}
+func NewWalletUsecase(walletRepo repository.WalletRepoItf, txManager config.TxManagerItf, env config.Env) *WalletUsecase {
+	return &WalletUsecase{walletRepo, txManager, env}
 }
 
 func (u *WalletUsecase) Create(ctx context.Context, req *model.WalletCreateRequest, userID string) (model.WalletResource, error) {
@@ -95,15 +96,22 @@ func (u *WalletUsecase) CreateTopUpSession(ctx context.Context, amount decimal.D
 }
 
 func (u *WalletUsecase) TopUpBalance(ctx context.Context, amount decimal.Decimal, walletID string) error {
-	_, err := u.walletRepo.GetByID(ctx, walletID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return exception.NewNotFoundError("wallet not found")
+	err := u.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		_, err := u.walletRepo.GetByID(txCtx, walletID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return exception.NewNotFoundError("wallet not found")
+			}
+			return err
 		}
-		return err
-	}
 
-	err = u.walletRepo.AddBalance(ctx, amount, walletID)
+		err = u.walletRepo.AddBalance(txCtx, amount, walletID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
