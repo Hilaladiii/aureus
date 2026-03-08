@@ -16,13 +16,14 @@ import (
 )
 
 type AuctionUsecaseItf interface {
-	Create(ctx context.Context, req *model.AuctionCreateRequest) (model.AuctionResource, error)
+	Create(ctx context.Context, req *model.AuctionCreateRequest, userID string) (model.AuctionResource, error)
 	Update(ctx context.Context, req *model.AuctionUpdateRequest, auctionID string) (model.AuctionResource, error)
 	Delete(ctx context.Context, auctionID string) (model.AuctionResource, error)
 	GetAll(ctx context.Context) ([]model.AuctionResource, error)
 	GetByID(ctx context.Context, auctionID string) (model.AuctionResource, error)
 	BidAuction(ctx context.Context, req *model.AuctionBidRequest, auctionID string, userID string) (model.AuctionResource, error)
 	GetBidHistory(ctx context.Context, auctionID string) ([]model.BidHistoryResource, error)
+	FinalizeAuction(ctx context.Context, auctionID string) error
 }
 
 type AuctionUsecase struct {
@@ -43,7 +44,7 @@ func NewAuctionUsecase(
 	return &AuctionUsecase{auctionRepo, walletRepo, bidRepo, seaweedFS, txManager}
 }
 
-func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateRequest) (model.AuctionResource, error) {
+func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateRequest, userID string) (model.AuctionResource, error) {
 	var uploadedImages []model.AuctionImage
 	for _, fileHeader := range req.Images {
 		if fileHeader.Size > 5*1024*1024 {
@@ -75,6 +76,7 @@ func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateReq
 		EndTime:      req.EndTime,
 		CategoryID:   req.CategoryID,
 		AuctionImage: uploadedImages,
+		AuctioneerID: userID,
 	}
 
 	err := u.auctionRepo.Create(ctx, &newAuction)
@@ -151,6 +153,9 @@ func (u *AuctionUsecase) BidAuction(ctx context.Context, req *model.AuctionBidRe
 		// get auction data
 		auction, err := u.auctionRepo.GetByIDWithLock(txCtx, auctionID)
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return exception.NewNotFoundError("auction not found")
+			}
 			return err
 		}
 
@@ -264,4 +269,46 @@ func (u *AuctionUsecase) GetBidHistory(ctx context.Context, auctionID string) ([
 	}
 
 	return model.BidResources(histories), nil
+}
+
+func (u *AuctionUsecase) FinalizeAuction(ctx context.Context, auctionID string) error {
+	err := u.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
+		auction, err := u.auctionRepo.GetByIDWithLock(txCtx, auctionID)
+		if err != nil {
+			return err
+		}
+
+		highestBidder, err := u.bidRepo.GetHighestBid(txCtx, auctionID)
+		if err != nil {
+			return err
+		}
+
+		bidderWallet, err := u.walletRepo.GetByUserIDWithLock(txCtx, highestBidder.UserID)
+		if err != nil {
+			return err
+		}
+
+		bidderWallet.HeldBalance = bidderWallet.HeldBalance.Sub(auction.CurrentPrice)
+		err = u.walletRepo.Update(txCtx, bidderWallet, bidderWallet.ID)
+		if err != nil {
+			return err
+		}
+
+		auctioneerWallet, err := u.walletRepo.GetByUserIDWithLock(txCtx, auction.AuctioneerID)
+		if err != nil {
+			return err
+		}
+
+		auctioneerWallet.ActiveBalance = auctioneerWallet.ActiveBalance.Add(auction.CurrentPrice)
+		err = u.walletRepo.Update(txCtx, auctioneerWallet, auctioneerWallet.ID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

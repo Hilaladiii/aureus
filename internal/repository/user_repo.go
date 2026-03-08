@@ -22,7 +22,7 @@ type UserRepo struct {
 }
 
 func NewUserRepo(db *gorm.DB) *UserRepo {
-	return &UserRepo{db: db}
+	return &UserRepo{db}
 }
 
 // CheckUserExist implements [UserRepoItf].

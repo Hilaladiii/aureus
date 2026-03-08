@@ -23,7 +23,7 @@ type AuctionRepo struct {
 }
 
 func NewAuctionRepo(db *gorm.DB) *AuctionRepo {
-	return &AuctionRepo{db: db}
+	return &AuctionRepo{db}
 }
 
 func (r *AuctionRepo) Create(ctx context.Context, auction *model.AuctionItem) error {

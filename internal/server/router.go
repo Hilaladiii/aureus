@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/Hilaladiii/aureus/internal/delivery/handler"
 	"github.com/Hilaladiii/aureus/internal/delivery/middleware"
+	"github.com/Hilaladiii/aureus/internal/model"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -63,8 +64,8 @@ func (r *Router) Setup(app *fiber.App) {
 	// auction route
 	auction := api.Group("/auctions")
 	auction.Use(r.Middleware.JwtMiddleware())
-	auction.Post("", r.AuctionHandler.Create)
+	auction.Post("", r.Middleware.RoleMiddleware(model.SELLER), r.AuctionHandler.Create)
 	auction.Get("", r.AuctionHandler.GetAll)
 	auction.Get("/:auctionId", r.AuctionHandler.GetByID)
-	auction.Post("/:auctionId/bid", r.AuctionHandler.BidAuction)
+	auction.Post("/:auctionId/bid", r.Middleware.RoleMiddleware(model.BIDDER), r.AuctionHandler.BidAuction)
 }

@@ -1,0 +1,5 @@
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users 
+    ALTER COLUMN role TYPE VARCHAR(10),
+    ALTER COLUMN role SET NOT NULL,
+    ADD CONSTRAINT users_role_check CHECK (role IN ('SELLER', 'BIDDER'));

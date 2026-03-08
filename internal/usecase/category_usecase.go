@@ -23,9 +23,7 @@ type CategoryUsecase struct {
 }
 
 func NewCategoryUsecase(categoryRepo repository.CategoryRepoItf) *CategoryUsecase {
-	return &CategoryUsecase{
-		categoryRepo: categoryRepo,
-	}
+	return &CategoryUsecase{categoryRepo}
 }
 
 func (u *CategoryUsecase) CreateCategory(ctx context.Context, req *model.CategoryCreateRequest) (model.CategoryResource, error) {

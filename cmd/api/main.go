@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/Hilaladiii/aureus/di"
@@ -12,7 +13,10 @@ func main() {
 		log.Fatalf("failed initialized server: %v", err)
 	}
 
-	err = app.Listen(":8000")
+	ctx := context.Background()
+	app.Worker.Start(ctx)
+
+	err = app.Web.Listen(":8000")
 	if err != nil {
 		log.Fatalf("Server crash: %v", err)
 	}

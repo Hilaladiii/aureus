@@ -21,7 +21,7 @@ type CategoryRepo struct {
 }
 
 func NewCategoryRepo(db *gorm.DB) *CategoryRepo {
-	return &CategoryRepo{db: db}
+	return &CategoryRepo{db}
 }
 
 func (r *CategoryRepo) CreateCategory(ctx context.Context, category *model.Category) error {

@@ -6,13 +6,13 @@ package di
 import (
 	"github.com/Hilaladiii/aureus/internal/delivery/middleware"
 	"github.com/Hilaladiii/aureus/internal/server"
+	"github.com/Hilaladiii/aureus/internal/worker"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
-	"github.com/gofiber/fiber/v3"
 	"github.com/google/wire"
 )
 
-func InitializeApp() (*fiber.App, error) {
+func InitializeApp() (*server.App, error) {
 	wire.Build(
 		config.LoadEnv,
 		config.NewDB,
@@ -20,15 +20,18 @@ func InitializeApp() (*fiber.App, error) {
 		config.NewValidator,
 		config.NewSeaweedFSStorage,
 		config.NewTxManager,
+		config.NewRedisClient,
 		wire.Bind(new(config.SeaweedFSStorageItf), new(*config.SeaweedFSStorage)),
 		UserSet,
 		CategorySet,
 		WalletSet,
 		AuctionSet,
 		BidSet,
+		worker.NewAuctionWorker,
 		middleware.NewMiddleware,
 		server.NewRouter,
 		server.NewFiberServer,
+		server.NewApp,
 	)
 
 	return nil, nil

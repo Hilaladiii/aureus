@@ -21,6 +21,9 @@ type Env struct {
 	S3Endpoint       string `mapstructure:"S3_ENDPOINT"`
 	S3SecretKey      string `mapstructure:"S3_SECRET_KEY"`
 	S3AccessKey      string `mapstructure:"S3_ACCESS_KEY"`
+	RedisAddress     string `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword    string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB          int    `mapstructure:"REDIS_DB"`
 }
 
 var envs = []string{
@@ -28,6 +31,7 @@ var envs = []string{
 	"JWT_SECRET", "JWT_EXPIRE",
 	"STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_KEY",
 	"S3_ENDPOINT", "S3_SECRET_KEY", "S3_ACCESS_KEY",
+	"REDIS_ADDRESS", "REDIS_PASSWORD", "REDIS_DB",
 }
 
 func LoadEnv() (Env, error) {

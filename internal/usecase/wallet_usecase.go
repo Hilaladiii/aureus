@@ -27,10 +27,7 @@ type WalletUsecase struct {
 }
 
 func NewWalletUsecase(walletRepo repository.WalletRepoItf, env config.Env) *WalletUsecase {
-	return &WalletUsecase{
-		walletRepo: walletRepo,
-		env:        env,
-	}
+	return &WalletUsecase{walletRepo, env}
 }
 
 func (u *WalletUsecase) Create(ctx context.Context, req *model.WalletCreateRequest, userID string) (model.WalletResource, error) {

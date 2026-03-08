@@ -26,10 +26,7 @@ type UserUsecase struct {
 }
 
 func NewUserUsecase(userRepo repository.UserRepoItf, jwt jwt.JwtItf) *UserUsecase {
-	return &UserUsecase{
-		userRepo: userRepo,
-		jwt:      jwt,
-	}
+	return &UserUsecase{userRepo, jwt}
 }
 
 // GetUserById implements [UserUsecaseItf].
@@ -53,7 +50,7 @@ func (u *UserUsecase) Login(ctx context.Context, req *model.UserLoginRequest) (s
 		return "", errors.New("invalid credentials")
 	}
 
-	token, err := u.jwt.CreateToken(user.ID)
+	token, err := u.jwt.CreateToken(user.ID, user.Role)
 	if err != nil {
 		return "", err
 	}
@@ -85,6 +82,7 @@ func (u *UserUsecase) Register(ctx context.Context, req *model.UserRegisterReque
 		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hashedPassword),
+		Role:     req.Role,
 	}
 
 	err = u.userRepo.CreateUser(ctx, newUser)

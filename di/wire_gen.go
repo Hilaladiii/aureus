@@ -12,14 +12,14 @@ import (
 	"github.com/Hilaladiii/aureus/internal/repository"
 	"github.com/Hilaladiii/aureus/internal/server"
 	"github.com/Hilaladiii/aureus/internal/usecase"
+	"github.com/Hilaladiii/aureus/internal/worker"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/jwt"
-	"github.com/gofiber/fiber/v3"
 )
 
 // Injectors from injector.go:
 
-func InitializeApp() (*fiber.App, error) {
+func InitializeApp() (*server.App, error) {
 	env, err := config.LoadEnv()
 	if err != nil {
 		return nil, err
@@ -48,5 +48,8 @@ func InitializeApp() (*fiber.App, error) {
 	middlewareMiddleware := middleware.NewMiddleware(jwtItf)
 	router := server.NewRouter(userHandler, categoryHandler, walletHandler, auctionHandler, middlewareMiddleware)
 	app := server.NewFiberServer(router)
-	return app, nil
+	client := config.NewRedisClient(env)
+	auctionWorker := worker.NewAuctionWorker(client, auctionUsecase)
+	serverApp := server.NewApp(app, auctionWorker)
+	return serverApp, nil
 }

@@ -23,7 +23,7 @@ type BidRepo struct {
 }
 
 func NewBidRepo(db *gorm.DB) *BidRepo {
-	return &BidRepo{db: db}
+	return &BidRepo{db}
 }
 
 func (r *BidRepo) Create(ctx context.Context, bid *model.BidHistory) error {

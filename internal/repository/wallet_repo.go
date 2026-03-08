@@ -26,7 +26,7 @@ type WalletRepo struct {
 }
 
 func NewWalletRepo(db *gorm.DB) *WalletRepo {
-	return &WalletRepo{db: db}
+	return &WalletRepo{db}
 }
 
 func (r *WalletRepo) Create(ctx context.Context, wallet *model.Wallet) error {

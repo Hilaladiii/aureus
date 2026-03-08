@@ -61,6 +61,8 @@ type AuctionItem struct {
 	CategoryID   string         `gorm:"type:uuid;"`
 	Category     *Category      `gorm:"foreignKey:CategoryID;references:ID"`
 	BidHistory   []BidHistory   `gorm:"foreignKey:ItemID;references:ID"`
+	AuctioneerID string         `gorm:"type:uuid"`
+	User         User           `gorm:"foreignKey:AuctioneerID;references:ID"`
 }
 
 type AuctionCreateRequest struct {
@@ -99,6 +101,7 @@ type AuctionResource struct {
 	EndTime      time.Time              `json:"endTime"`
 	Category     *Category              `json:"category"`
 	Images       []AuctionImageResource `json:"images"`
+	AuctioneerID string                 `json:"auctioneerId"`
 }
 
 func (a *AuctionItem) Resource() AuctionResource {
@@ -112,6 +115,7 @@ func (a *AuctionItem) Resource() AuctionResource {
 		StartTime:    a.StartTime,
 		EndTime:      a.EndTime,
 		Category:     a.Category,
+		AuctioneerID: a.AuctioneerID,
 		Images:       AuctionImageResources(a.AuctionImage),
 	}
 }

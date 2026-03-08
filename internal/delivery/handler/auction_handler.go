@@ -19,6 +19,11 @@ func NewAuctionHandler(auctionUc usecase.AuctionUsecaseItf, validator *validator
 }
 
 func (h *AuctionHandler) Create(c fiber.Ctx) error {
+	userID, err := util.GetJwtClaimLocals(c)
+	if err != nil {
+		return err
+	}
+
 	var auctionPayload model.AuctionCreateRequest
 	if err := c.Bind().Body(&auctionPayload); err != nil {
 		return err
@@ -28,7 +33,7 @@ func (h *AuctionHandler) Create(c fiber.Ctx) error {
 		return err
 	}
 
-	auction, err := h.auctionUc.Create(c.Context(), &auctionPayload)
+	auction, err := h.auctionUc.Create(c.Context(), &auctionPayload, userID)
 	if err != nil {
 		return err
 	}

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Hilaladiii/aureus/internal/model"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type JwtItf interface {
-	CreateToken(userID string) (string, error)
-	VerifyToken(tokenString string) (string, error)
+	CreateToken(userID string, role model.Role) (string, error)
+	VerifyToken(tokenString string) (*UserClaims, error)
 }
 
 type Jwt struct {
@@ -21,6 +22,7 @@ type Jwt struct {
 type UserClaims struct {
 	jwt.RegisteredClaims
 	UserID string
+	Role   model.Role
 }
 
 func NewJwt(env config.Env) (JwtItf, error) {
@@ -35,7 +37,7 @@ func NewJwt(env config.Env) (JwtItf, error) {
 	}, nil
 }
 
-func (j *Jwt) CreateToken(userID string) (string, error) {
+func (j *Jwt) CreateToken(userID string, role model.Role) (string, error) {
 	if j.ExpireTime <= 0 {
 		return "", fmt.Errorf("jwt expire time must be greater than 0")
 	}
@@ -45,6 +47,7 @@ func (j *Jwt) CreateToken(userID string) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.ExpireTime)),
 		},
 		UserID: userID,
+		Role:   role,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -57,19 +60,19 @@ func (j *Jwt) CreateToken(userID string) (string, error) {
 	return signedToken, nil
 }
 
-func (j *Jwt) VerifyToken(tokenString string) (string, error) {
+func (j *Jwt) VerifyToken(tokenString string) (*UserClaims, error) {
 	var claims UserClaims
 
 	token, err := jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (any, error) {
 		return []byte(j.SecretKey), nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed parse token %v", err)
+		return nil, fmt.Errorf("failed parse token %v", err)
 	}
 
 	if !token.Valid {
-		return "", fmt.Errorf("invalid token")
+		return nil, fmt.Errorf("invalid token")
 	}
 
-	return claims.UserID, nil
+	return &claims, nil
 }
