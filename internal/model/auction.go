@@ -65,6 +65,11 @@ type AuctionItem struct {
 	User         User           `gorm:"foreignKey:AuctioneerID;references:ID"`
 }
 
+type LeaderboardResource struct {
+	CensoredName string  `json:"name"`
+	BidAmount    float64 `json:"bidAmount"`
+}
+
 type AuctionCreateRequest struct {
 	Name         string                  `form:"name" validate:"required"`
 	Description  *string                 `form:"description,omitempty" validate:"omitempty"`

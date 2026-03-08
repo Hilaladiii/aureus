@@ -1,12 +1,19 @@
 package handler
 
 import (
+	"bufio"
+	"context"
+	"fmt"
+	"time"
+
 	"github.com/Hilaladiii/aureus/internal/model"
 	"github.com/Hilaladiii/aureus/internal/usecase"
 	"github.com/Hilaladiii/aureus/pkg/response"
 	"github.com/Hilaladiii/aureus/pkg/util"
+	"github.com/bytedance/sonic"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
+	"github.com/valyala/fasthttp"
 )
 
 type AuctionHandler struct {
@@ -88,4 +95,37 @@ func (h *AuctionHandler) GetByID(c fiber.Ctx) error {
 		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, auctions))
+}
+
+func (h *AuctionHandler) StreamLeaderboard(c fiber.Ctx) error {
+	auctionID := c.Params("auctionId")
+	err := util.ValidateUUID(auctionID)
+	if err != nil {
+		return err
+	}
+
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+
+	c.Status(fiber.StatusOK).RequestCtx().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			topBidders, err := h.auctionUc.GetLeaderboard(context.Background(), auctionID)
+			if err != nil || len(topBidders) == 0 {
+				continue
+			}
+
+			jsonData, _ := sonic.Marshal(topBidders)
+			eventString := fmt.Sprintf("data: %s\n\n", string(jsonData))
+			if _, writeErr := w.WriteString(eventString); writeErr != nil {
+				return
+			}
+			w.Flush()
+		}
+	}))
+
+	return nil
 }

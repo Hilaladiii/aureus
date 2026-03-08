@@ -10,6 +10,8 @@ import (
 var AuctionSet = wire.NewSet(
 	repository.NewAuctionRepo,
 	wire.Bind(new(repository.AuctionRepoItf), new(*repository.AuctionRepo)),
+	repository.NewAuctionCacheRepo,
+	wire.Bind(new(repository.AuctionCacheRepoItf), new(*repository.AuctionCacheRepo)),
 	usecase.NewAuctionUsecase,
 	wire.Bind(new(usecase.AuctionUsecaseItf), new(*usecase.AuctionUsecase)),
 	handler.NewAuctionHandler,

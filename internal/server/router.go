@@ -68,4 +68,5 @@ func (r *Router) Setup(app *fiber.App) {
 	auction.Get("", r.AuctionHandler.GetAll)
 	auction.Get("/:auctionId", r.AuctionHandler.GetByID)
 	auction.Post("/:auctionId/bid", r.Middleware.RoleMiddleware(model.BIDDER), r.AuctionHandler.BidAuction)
+	auction.Get("/:auctionId/leaderboard/stream", r.AuctionHandler.StreamLeaderboard)
 }

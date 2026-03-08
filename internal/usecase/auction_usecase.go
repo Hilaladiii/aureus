@@ -10,7 +10,9 @@ import (
 	"github.com/Hilaladiii/aureus/internal/repository"
 	"github.com/Hilaladiii/aureus/pkg/config"
 	"github.com/Hilaladiii/aureus/pkg/exception"
+	"github.com/Hilaladiii/aureus/pkg/util"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -24,28 +26,49 @@ type AuctionUsecaseItf interface {
 	BidAuction(ctx context.Context, req *model.AuctionBidRequest, auctionID string, userID string) (model.AuctionResource, error)
 	GetBidHistory(ctx context.Context, auctionID string) ([]model.BidHistoryResource, error)
 	FinalizeAuction(ctx context.Context, auctionID string) error
+	GetLeaderboard(ctx context.Context, auctionID string) ([]model.LeaderboardResource, error)
 }
 
 type AuctionUsecase struct {
-	auctionRepo repository.AuctionRepoItf
-	walletRepo  repository.WalletRepoItf
-	bidRepo     repository.BidRepoItf
-	seaweedFS   config.SeaweedFSStorageItf
-	txManager   config.TxManagerItf
+	auctionRepo  repository.AuctionRepoItf
+	auctionCache repository.AuctionCacheRepoItf
+	walletRepo   repository.WalletRepoItf
+	bidRepo      repository.BidRepoItf
+	userRepo     repository.UserRepoItf
+	seaweedFS    config.SeaweedFSStorageItf
+	txManager    config.TxManagerItf
 }
 
 func NewAuctionUsecase(
 	auctionRepo repository.AuctionRepoItf,
+	auctionCache repository.AuctionCacheRepoItf,
 	walletRepo repository.WalletRepoItf,
 	bidRepo repository.BidRepoItf,
+	userRepo repository.UserRepoItf,
 	seaweedFS config.SeaweedFSStorageItf,
 	txManager config.TxManagerItf,
+	redis *redis.Client,
 ) *AuctionUsecase {
-	return &AuctionUsecase{auctionRepo, walletRepo, bidRepo, seaweedFS, txManager}
+	return &AuctionUsecase{auctionRepo, auctionCache, walletRepo, bidRepo, userRepo, seaweedFS, txManager}
 }
 
 func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateRequest, userID string) (model.AuctionResource, error) {
 	var uploadedImages []model.AuctionImage
+
+	_, err := u.walletRepo.GetByID(ctx, userID)
+	if err != nil {
+		// if auctioneer doesn't have wallet, register first
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newWallet := model.Wallet{
+				ActiveBalance: decimal.NewFromInt(0),
+			}
+			err := u.walletRepo.Create(ctx, &newWallet)
+			if err != nil {
+				return model.AuctionResource{}, err
+			}
+		}
+		return model.AuctionResource{}, err
+	}
 	for _, fileHeader := range req.Images {
 		if fileHeader.Size > 5*1024*1024 {
 			return model.AuctionResource{}, exception.NewBadRequestError("file to large")
@@ -79,7 +102,7 @@ func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateReq
 		AuctioneerID: userID,
 	}
 
-	err := u.auctionRepo.Create(ctx, &newAuction)
+	err = u.auctionRepo.Create(ctx, &newAuction)
 	if err != nil {
 		return model.AuctionResource{}, err
 	}
@@ -253,6 +276,13 @@ func (u *AuctionUsecase) BidAuction(ctx context.Context, req *model.AuctionBidRe
 			return err
 		}
 		finalAuction = auction.Resource()
+
+		// update leaderboard in redis
+		bidAmount, _ := auction.CurrentPrice.Float64()
+		go func() {
+			_ = u.auctionCache.AddBidToLeaderboard(context.Background(), auctionID, userID, bidAmount)
+		}()
+
 		return nil
 	})
 	if err != nil {
@@ -311,4 +341,28 @@ func (u *AuctionUsecase) FinalizeAuction(ctx context.Context, auctionID string) 
 	}
 
 	return nil
+}
+
+func (u *AuctionUsecase) GetLeaderboard(ctx context.Context, auctionID string) ([]model.LeaderboardResource, error) {
+	bidders, err := u.auctionCache.GetTopBidders(ctx, auctionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var resources []model.LeaderboardResource
+
+	for _, bidder := range bidders {
+		user, err := u.userRepo.GetUserById(ctx, bidder.UserID)
+		if err != nil {
+			return nil, err
+		}
+
+		cencoredName := util.CencorName(user.Username)
+		resources = append(resources, model.LeaderboardResource{
+			CensoredName: cencoredName,
+			BidAmount:    bidder.BidAmount,
+		})
+	}
+
+	return resources, nil
 }
