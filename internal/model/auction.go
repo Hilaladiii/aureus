@@ -104,7 +104,7 @@ type AuctionResource struct {
 	CurrentPrice decimal.Decimal        `json:"currentPrice"`
 	StartTime    time.Time              `json:"startTime"`
 	EndTime      time.Time              `json:"endTime"`
-	Category     *Category              `json:"category"`
+	Category     CategoryResource       `json:"category"`
 	Images       []AuctionImageResource `json:"images"`
 	AuctioneerID string                 `json:"auctioneerId"`
 }
@@ -119,7 +119,7 @@ func (a *AuctionItem) Resource() AuctionResource {
 		BidIncrement: a.BidIncrement,
 		StartTime:    a.StartTime,
 		EndTime:      a.EndTime,
-		Category:     a.Category,
+		Category:     a.Category.Resource(),
 		AuctioneerID: a.AuctioneerID,
 		Images:       AuctionImageResources(a.AuctionImage),
 	}

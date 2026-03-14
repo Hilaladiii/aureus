@@ -21,8 +21,8 @@ type Jwt struct {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UserID string
-	Role   model.Role
+	UserID string     `json:"userId"`
+	Role   model.Role `json:"role"`
 }
 
 func NewJwt(env config.Env) (JwtItf, error) {

@@ -25,7 +25,10 @@ type UserUsecase struct {
 	jwt      jwt.JwtItf
 }
 
-func NewUserUsecase(userRepo repository.UserRepoItf, jwt jwt.JwtItf) *UserUsecase {
+func NewUserUsecase(
+	userRepo repository.UserRepoItf,
+	jwt jwt.JwtItf,
+) *UserUsecase {
 	return &UserUsecase{userRepo, jwt}
 }
 
@@ -70,7 +73,7 @@ func (u *UserUsecase) Register(ctx context.Context, req *model.UserRegisterReque
 	}
 
 	if err := util.ValidateStrongPassword(req.Password); err != nil {
-		return model.UserResource{}, err
+		return model.UserResource{}, exception.NewBadRequestError(err.Error())
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)

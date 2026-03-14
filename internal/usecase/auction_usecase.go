@@ -23,6 +23,7 @@ type AuctionUsecaseItf interface {
 	Delete(ctx context.Context, auctionID string) (model.AuctionResource, error)
 	GetAll(ctx context.Context) ([]model.AuctionResource, error)
 	GetByID(ctx context.Context, auctionID string) (model.AuctionResource, error)
+	GetByAuctioneerID(ctx context.Context, auctioneerID string) ([]model.AuctionResource, error)
 	BidAuction(ctx context.Context, req *model.AuctionBidRequest, auctionID string, userID string) (model.AuctionResource, error)
 	GetBidHistory(ctx context.Context, auctionID string) ([]model.BidHistoryResource, error)
 	FinalizeAuction(ctx context.Context, auctionID string) error
@@ -55,20 +56,21 @@ func NewAuctionUsecase(
 func (u *AuctionUsecase) Create(ctx context.Context, req *model.AuctionCreateRequest, userID string) (model.AuctionResource, error) {
 	var uploadedImages []model.AuctionImage
 
-	_, err := u.walletRepo.GetByID(ctx, userID)
-	if err != nil {
-		// if auctioneer doesn't have wallet, register first
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			newWallet := model.Wallet{
-				ActiveBalance: decimal.NewFromInt(0),
-			}
-			err := u.walletRepo.Create(ctx, &newWallet)
-			if err != nil {
-				return model.AuctionResource{}, err
-			}
+	_, err := u.walletRepo.GetByUserID(ctx, userID)
+	// if auctioneer doesn't have wallet, register
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		newWallet := model.Wallet{
+			ActiveBalance: decimal.NewFromInt(0),
+			UserID:        userID,
 		}
+		err := u.walletRepo.Create(ctx, &newWallet)
+		if err != nil {
+			return model.AuctionResource{}, err
+		}
+	} else {
 		return model.AuctionResource{}, err
 	}
+
 	for _, fileHeader := range req.Images {
 		if fileHeader.Size > 5*1024*1024 {
 			return model.AuctionResource{}, exception.NewBadRequestError("file to large")
@@ -168,6 +170,14 @@ func (u *AuctionUsecase) GetByID(ctx context.Context, auctionID string) (model.A
 		return model.AuctionResource{}, err
 	}
 	return auction.Resource(), nil
+}
+
+func (u *AuctionUsecase) GetByAuctioneerID(ctx context.Context, auctioneerID string) ([]model.AuctionResource, error) {
+	auctions, err := u.auctionRepo.GetByAuctioneerID(ctx, auctioneerID)
+	if err != nil {
+		return nil, err
+	}
+	return model.AuctionResources(auctions), nil
 }
 
 func (u *AuctionUsecase) BidAuction(ctx context.Context, req *model.AuctionBidRequest, auctionID string, userID string) (model.AuctionResource, error) {

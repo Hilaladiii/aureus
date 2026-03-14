@@ -59,7 +59,7 @@ func (r *Router) Setup(app *fiber.App) {
 	wallet.Use(r.Middleware.JwtMiddleware())
 	wallet.Post("/top-up", r.WalletHandler.CreateTopUpSession)
 	wallet.Post("", r.WalletHandler.Create)
-	wallet.Post("/:walletId", r.WalletHandler.GetCurrentBalance)
+	wallet.Get("/:walletId", r.WalletHandler.GetCurrentBalance)
 
 	// auction route
 	auction := api.Group("/auctions")

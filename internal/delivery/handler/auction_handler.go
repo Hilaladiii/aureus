@@ -32,7 +32,7 @@ func (h *AuctionHandler) Create(c fiber.Ctx) error {
 	}
 
 	var auctionPayload model.AuctionCreateRequest
-	if err := c.Bind().Body(&auctionPayload); err != nil {
+	if err := c.Bind().Form(&auctionPayload); err != nil {
 		return err
 	}
 
@@ -91,6 +91,19 @@ func (h *AuctionHandler) GetByID(c fiber.Ctx) error {
 	}
 
 	auctions, err := h.auctionUc.GetByID(c.Context(), auctionID)
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, auctions))
+}
+
+func (h *AuctionHandler) GetByAuctioneerID(c fiber.Ctx) error {
+	auctionID := c.Params("auctionId")
+	if err := util.ValidateUUID(auctionID); err != nil {
+		return err
+	}
+
+	auctions, err := h.auctionUc.GetByAuctioneerID(c.Context(), auctionID)
 	if err != nil {
 		return err
 	}

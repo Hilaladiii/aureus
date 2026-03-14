@@ -25,7 +25,7 @@ func ValidateStrongPassword(pass string) error {
 		return errors.New("Password must contain at least one number")
 	}
 
-	if !regexp.MustCompile(`[@$!%*?&#]`).MatchString(pass) {
+	if !regexp.MustCompile(`[@$!%*?&#;]`).MatchString(pass) {
 		return errors.New("Password must contain at least one special character")
 	}
 

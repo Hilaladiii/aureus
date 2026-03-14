@@ -16,6 +16,7 @@ type AuctionRepoItf interface {
 	GetAll(ctx context.Context) ([]model.AuctionItem, error)
 	GetByID(ctx context.Context, auctionID string) (*model.AuctionItem, error)
 	GetByIDWithLock(ctx context.Context, auctionID string) (*model.AuctionItem, error)
+	GetByAuctioneerID(ctx context.Context, auctioneerID string) ([]model.AuctionItem, error)
 }
 
 type AuctionRepo struct {
@@ -90,4 +91,14 @@ func (r *AuctionRepo) GetByIDWithLock(ctx context.Context, auctionID string) (*m
 		return nil, err
 	}
 	return &auction, nil
+}
+
+func (r *AuctionRepo) GetByAuctioneerID(ctx context.Context, auctioneerID string) ([]model.AuctionItem, error) {
+	var auctions []model.AuctionItem
+	err := r.db.WithContext(ctx).Find(&auctions, "auction_items.auctioneerId = ?", auctioneerID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return auctions, nil
 }

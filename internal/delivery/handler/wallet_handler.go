@@ -38,6 +38,9 @@ func (h *WalletHandler) CreateTopUpSession(c fiber.Ctx) error {
 	}
 
 	url, err := h.walletUc.CreateTopUpSession(c.Context(), walletPayload.ActiveBalance.Abs(), userID)
+	if err != nil {
+		return err
+	}
 
 	return c.Status(fiber.StatusOK).JSON(response.SuccessResponse(fiber.StatusOK, fiber.Map{
 		"url": url,
